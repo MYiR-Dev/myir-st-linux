@@ -495,6 +495,7 @@
 			pinmux = <STM32_PINMUX('D', 9, AF2)>, /* I2S1_SDO */
 				 <STM32_PINMUX('F', 12, AF3)>, /* I2S1_SDI */
 				 <STM32_PINMUX('G', 7, AF3)>, /* I2S1_WS */
+				 <STM32_PINMUX('D', 8, AF2)>, /* I2S1_MCK */
 				 <STM32_PINMUX('G', 6, AF3)>; /* I2S1_CK */
 			slew-rate = <1>;
 			drive-push-pull;
@@ -506,6 +507,7 @@
 		pins {
 			pinmux = <STM32_PINMUX('D', 9, ANALOG)>, /* I2S1_SDO */
 				 <STM32_PINMUX('F', 12, ANALOG)>, /* I2S1_SDI */
+				 <STM32_PINMUX('D', 8, ANALOG)>, /* I2S1_MCK */
 				 <STM32_PINMUX('G', 7, ANALOG)>, /* I2S1_WS */
 				 <STM32_PINMUX('G', 6, ANALOG)>; /* I2S1_CK */
 		};
@@ -555,6 +557,24 @@
 	};
 };
 
+&pinctrl {
+
+	adc_12_pins_mx: adc_12_mx-0 {
+		pins {
+			pinmux = <STM32_PINMUX('G', 3, ANALOG)>, /* ADC1_INP3 */
+					 <STM32_PINMUX('G', 4, ANALOG)>; /* ADC1_INP4 */
+		};
+	};
+
+	adc_12_sleep_pins_mx: adc_12_sleep_mx-0 {
+		pins {
+			pinmux = <STM32_PINMUX('G', 3, ANALOG)>, /* ADC1_INP3 */
+					 <STM32_PINMUX('G', 4, ANALOG)>; /* ADC1_INP4 */
+		};
+	};
+
+};
+
 &pinctrl_z {
 	i2c8_pins_a: i2c8-0 {
             pins {
@@ -576,11 +596,20 @@
 };
 
 &i2s1 {
+	#clock-cells = <0>;
 	pinctrl-names = "default", "sleep";
 	pinctrl-0 = <&i2s1_pins_a>;
 	pinctrl-1 = <&i2s1_sleep_pins_a>;
 	#sound-dai-cells = <0>;
 	status = "okay";
+
+        i2s1_port: port {
+                i2s1_endpoint: endpoint {
+                remote-endpoint = <&es8328_endpoint>;
+                                format = "i2s";
+                                mclk-fs = <256>;
+                };
+        };
 };
 
 &a35ss_syscfg {
@@ -759,13 +788,27 @@
 		status = "okay";
 	};
 
-	es8328_codec: es8328@10 {
-	        compatible = "everest,es8388";
-	        clocks = <&clk_ext_sound>;
-	        clock-names = "mclk";
-	        #sound-dai-cells = <0>;
-	        reg = <0x10>;
-	};
+        es8328_codec: es8328@10 {
+                status = "okay";
+                #sound-dai-cells = <0>;
+                compatible = "everest,es8388";
+                reg = <0x10>;
+                // clocks = <&clk_ext_sound>;
+                // clock-names = "mclk";
+                clocks = <&i2s1>;
+                clock-names = "MCLK";
+ 
+                port {
+                        #address-cells = <0x1>;
+                        #size-cells = <0x0>;
+                        port@0 {
+                                reg = <0>;
+                                es8328_endpoint: endpoint {
+                                        remote-endpoint = <&i2s1_endpoint>;
+                                };
+                        };
+                };
+        };
 
     stusb1600@28 {
             compatible = "st,stusb1600";
@@ -1251,4 +1294,30 @@
             };
         };
     };
+};
+
+&adc_12{
+	pinctrl-names = "default", "sleep";
+	pinctrl-0 = <&adc_12_pins_mx>;
+	pinctrl-1 = <&adc_12_sleep_pins_mx>;
+	vdda-supply = <&scmi_v1v8>;
+	vref-supply = <&scmi_v1v8>;
+	status = "disabled";
+	adc1: adc@0 {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		/* private resources for ADC1 */
+		status = "okay";
+		/* Single-ended channel */
+		channel@3 {
+			reg = <3>;               /* ADC1 in3 channel is used */
+			st,min-sample-time-ns = <10000>;  /* 10µs sampling time */
+		};
+		/* Single-ended channel */
+		channel@4 {
+			reg = <4>;
+			st,min-sample-time-ns = <10000>;  /* 10µs sampling time */
+		};
+	};
+
 };
