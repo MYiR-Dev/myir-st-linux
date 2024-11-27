@@ -777,6 +777,8 @@ static int yt8512_config_init(struct phy_device *phydev)
 	ret = ytphy_write_ext(phydev, YT8512_EXTREG_SLEEP_CONTROL1, val);
 	if (ret < 0)
 		return ret;
+	val = ytphy_read_ext(phydev, 0xa012);
+	ret = ytphy_write_ext(phydev, 0xa012, val &= ~(0x1 << 6) );
 
 	return ret;
 }
