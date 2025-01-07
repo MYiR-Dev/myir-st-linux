@@ -1392,7 +1392,7 @@ else ifeq ("$(SRCARCH)", "arm64")
 export TARGET_ARM64=y
 endif
 
-stdtstree := $(dtstree)/st
+stdtstree := $(dtstree)/myir
 
 # Default path for external device trees
 KBUILD_EXTDTS ?= $(realpath $(srctree))/$(stdtstree)/external-dt/linux
