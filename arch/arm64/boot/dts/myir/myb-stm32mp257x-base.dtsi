@@ -326,9 +326,22 @@
 		};
 	};
 
+	usdhc1_pwrseq: usdhc1_pwrseq {
+		compatible = "mmc-pwrseq-simple";
+		//pinctrl-names = "default";
+		//pinctrl-0 = <&pinctrl_usdhc1_gpio>;
+		reset-gpios = <&gpiod 5 GPIO_ACTIVE_LOW>;
+	};
+
 };
 
 &pinctrl{
+
+	pinctrl_usdhc1_gpio: pinctrl_usdhc1_gpio {
+		pins {
+			pinmux = <STM32_PINMUX('D', 5, AF10)>;
+		};
+	};
 
 	fdcan1_pins_mx: fdcan1_mx-0 {
 		pins1 {
@@ -1207,6 +1220,12 @@
 	bus-width = <4>;
 	vmmc-supply = <&scmi_v3v3>;
 	status = "okay";
+	mmc-pwrseq = <&usdhc1_pwrseq>;
+	brcmf: wifi@1 {
+		reg = <1>;
+		compatible = "brcm,bcm4329-fmac";
+		status = "okay";
+	};
 };
 
 &spi7 {
