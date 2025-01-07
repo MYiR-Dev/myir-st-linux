@@ -1314,6 +1314,15 @@ static int stm32_i2s_probe(struct platform_device *pdev)
 		return ret;
 	}
 
+	/* i2s ioswp if requested */
+	if (of_find_property(pdev->dev.of_node, "i2s-ioswp", NULL)) {
+		/* Set I2S IOSWP in i2s mode */
+		ret = regmap_update_bits(i2s->regmap, STM32_I2S_CFG2_REG,
+				  I2S_CFG2_IOSWP, I2S_CFG2_IOSWP);
+		if (ret)
+			return ret;
+	}
+
 	/* Set SPI/I2S in i2s mode */
 	ret = regmap_update_bits(i2s->regmap, STM32_I2S_CGFR_REG,
 				 I2S_CGFR_I2SMOD, I2S_CGFR_I2SMOD);
