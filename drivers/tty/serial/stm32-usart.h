@@ -211,7 +211,7 @@ static const unsigned int STM32_USART_PRESC_VAL[] = {1, 2, 4, 6, 8, 10, 12, 16, 
 #define USART_HWCFCR2_CFG3	GENMASK(11, 8)	/* MP2 */
 
 #define STM32_SERIAL_NAME "ttySTM"
-#define STM32_MAX_PORTS 9
+#define STM32_MAX_PORTS 10
 #define STM32H7_USART_FIFO_SIZE 16
 
 #define RX_BUF_L 4096		 /* dma rx buffer length     */
