@@ -570,9 +570,6 @@ static int es8328_hw_params(struct snd_pcm_substream *substream,
         snd_soc_component_write(component, 0x1b,  0x00);
         snd_soc_component_write(component, 0x27,  0xb8);
         snd_soc_component_write(component, 0x2a,  0xb8);
-        snd_soc_component_write(component, 0x35,  0xa0);
-        snd_soc_component_write(component, 0x37,  0xd0);
-        snd_soc_component_write(component, 0x39,  0xd0);
         msleep(1);
         snd_soc_component_write(component, 0x2e,  0x1e);
         snd_soc_component_write(component, 0x2f,  0x1e);
