@@ -978,7 +978,7 @@
 
 		port {
 			ov5640_cam: endpoint {
-				remote-endpoint = <&csi2host_sink>;
+				remote-endpoint = <&csi_sink>;
 				clock-lanes = <0>;
 				data-lanes = <0 1>;
 				link-frequencies = /bits/ 64 <456000000>;
@@ -1128,7 +1128,7 @@
 };
 */
 &rtc {
-	status = "disabled";
+	status = "okay";
 };
 
 &scmi_regu {
@@ -1206,10 +1206,6 @@
 	st,neg-edge;
 	bus-width = <4>;
 	vmmc-supply = <&scmi_v3v3>;
-	mmc-pwrseq = <&wifi_pwrseq>;
-	cap-sdio-irq;
-	#address-cells = <1>;
-	#size-cells = <0>;
 	status = "okay";
 };
 
