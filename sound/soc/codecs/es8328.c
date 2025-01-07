@@ -548,6 +548,41 @@ static int es8328_hw_params(struct snd_pcm_substream *substream,
 				ES8328_ADCCONTROL4_ADCWL_MASK,
 				wl << ES8328_ADCCONTROL4_ADCWL_SHIFT);
 
+        snd_soc_component_write(component, 0x01,  0x60);
+        snd_soc_component_write(component, 0x02,  0xf3);
+        snd_soc_component_write(component, 0x02,  0xf0);
+        snd_soc_component_write(component, 0x2b,  0x80);
+        snd_soc_component_write(component, 0x00,  0x36);
+        snd_soc_component_write(component, 0x08,  0x04);
+        snd_soc_component_write(component, 0x04,  0x00);
+        snd_soc_component_write(component, 0x06,  0xc3);
+        snd_soc_component_write(component, 0x19,  0x02);
+        snd_soc_component_write(component, 0x09,  0x00);
+        snd_soc_component_write(component, 0x0a,  0xf8);
+        snd_soc_component_write(component, 0x0b,  0x9a);
+        snd_soc_component_write(component, 0x0c,  0x50);
+        snd_soc_component_write(component, 0x0d,  0x02);
+        snd_soc_component_write(component, 0x10,  0x00);
+        snd_soc_component_write(component, 0x11,  0x00);
+        snd_soc_component_write(component, 0x17,  0x18);
+        snd_soc_component_write(component, 0x18,  0x02);
+        snd_soc_component_write(component, 0x1a,  0x00);
+        snd_soc_component_write(component, 0x1b,  0x00);
+        snd_soc_component_write(component, 0x27,  0xb8);
+        snd_soc_component_write(component, 0x2a,  0xb8);
+        snd_soc_component_write(component, 0x35,  0xa0);
+        snd_soc_component_write(component, 0x37,  0xd0);
+        snd_soc_component_write(component, 0x39,  0xd0);
+        msleep(1);
+        snd_soc_component_write(component, 0x2e,  0x1e);
+        snd_soc_component_write(component, 0x2f,  0x1e);
+        snd_soc_component_write(component, 0x30,  0x1e);
+        snd_soc_component_write(component, 0x31,  0x1e);
+        snd_soc_component_write(component, 0x03,  0x09);
+        snd_soc_component_write(component, 0x02,  0x00);
+        msleep(20);
+        snd_soc_component_write(component, 0x04,  0x3c);
+
 	return snd_soc_component_update_bits(component, reg, ES8328_RATEMASK, ratio);
 }
 

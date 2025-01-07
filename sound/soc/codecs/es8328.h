@@ -277,7 +277,7 @@ int es8328_probe(struct device *dev, struct regmap *regmap);
 
 #define ES8328_SYSCLK		0
 
-#define ES8328_REG_MAX		0x35
+#define ES8328_REG_MAX		0x52
 
 #define ES8328_1536FS		1536
 #define ES8328_1024FS		1024
