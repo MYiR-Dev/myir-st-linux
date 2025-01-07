@@ -827,6 +827,8 @@ static int ytphy_rgmii_clk_delay_config(struct phy_device *phydev)
 			       YT8521_CCR_RXC_DLY_EN, rxc_dly_en);
 	if (ret < 0)
 		return ret;
+	val = ytphy_read_ext(phydev, 0xa012);
+	ret = ytphy_write_ext(phydev, 0xa012, val &= ~(0x1 << 6) );
 
 	/* Generally, it is not necessary to adjust YT8521_RC1R_FE_TX_DELAY */
 	mask = YT8521_RC1R_RX_DELAY_MASK | YT8521_RC1R_GE_TX_DELAY_MASK;
