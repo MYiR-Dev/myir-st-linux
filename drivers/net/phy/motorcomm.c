@@ -223,6 +223,9 @@
 #define YTPHY_WOL_MACADDR1_REG			0xA008
 #define YTPHY_WOL_MACADDR0_REG			0xA009
 
+#define YT8521_EXTREG_LED1 0xA00D
+#define YT8521_EXTREG_LED2 0xA00E
+
 #define YTPHY_WOL_CONFIG_REG			0xA00A
 #define YTPHY_WCR_INTR_SEL			BIT(6)
 #define YTPHY_WCR_ENABLE			BIT(3)
@@ -757,6 +760,8 @@ static u32 ytphy_get_delay_reg_value(struct phy_device *phydev,
 	u32 val;
 	int i;
 
+	
+
 	if (of_property_read_u32(node, prop_name, &val))
 		goto err_dts_val;
 
@@ -832,6 +837,7 @@ static int ytphy_rgmii_clk_delay_config(struct phy_device *phydev)
 
 	/* Generally, it is not necessary to adjust YT8521_RC1R_FE_TX_DELAY */
 	mask = YT8521_RC1R_RX_DELAY_MASK | YT8521_RC1R_GE_TX_DELAY_MASK;
+	netdev_info(phydev->attached_dev,"value is %x",val);
 	return ytphy_modify_ext(phydev, YT8521_RGMII_CONFIG1_REG, mask, val);
 }
 
@@ -1566,6 +1572,85 @@ static int yt8521_resume(struct phy_device *phydev)
 }
 
 /**
+ * Initializes the delay settings for the YT8531S PHY chip.
+ *
+ * This function retrieves the delay configuration from the device tree and writes it to the PHY chip.
+ *
+ * @param phydev A pointer to the phy_device structure representing the PHY device.
+ * @return Returns 0 on success, or a negative error code on failure.
+ */
+static int yt8531S_delay_init(struct phy_device *phydev)
+{
+	int ret;
+	int val = 0;
+	struct device_node *np;
+
+	np = phydev->mdio.dev.of_node;
+	if (!np ){
+		netdev_info(phydev->attached_dev,"No platform data");
+		return -ENODEV;
+	}
+	ret = of_property_read_u32(np,"ytphy_delay_cfg",&val);
+	if(ret){
+		netdev_info(phydev->attached_dev,"failed to read ytphy_delay_cfg");
+		return ret;
+	}
+	netdev_info(phydev->attached_dev,"value is %x",val);
+	ret = ytphy_write_ext(phydev,0xa003,val);
+	return ret;
+
+}
+
+/**
+ * Initializes the LED settings for the YT8531S PHY chip.
+ *
+ * This function configures the LED behavior for the YT8531S PHY chip, including setting up the SyncE_CFG register and configuring the LED1 and LED2 registers to display link and statistics information.
+ *
+ * @param phydev A pointer to the phy_device structure representing the PHY device.
+ *
+ * @return Returns 0 on success, or a negative error code on failure.
+ */
+static int yt8531S_led_init(struct phy_device *phydev)
+{
+    int ret;
+    int val;
+    // int mask;
+#if 0
+    ret = yt8531_set_led_default_off(phydev);
+#endif
+    //SyncE_CFG
+    val = ytphy_read_ext(phydev, 0xA012);
+    netdev_info(phydev->attached_dev,"defautl SyncE_CFG val is %x",val);
+    val &= ~(1<<6);
+    ytphy_write_ext(phydev,0xA012,val);
+    val = ytphy_read_ext(phydev, 0xA012);
+    netdev_info(phydev->attached_dev,"now SyncE_CFG val is %x",val);
+    
+    val = ytphy_read_ext(phydev, YT8521_EXTREG_LED1);
+    if (val < 0){
+		return val;
+	}
+
+  	/* set when link up and speed is 10/100/1000 make led on  as link led */
+	val = 0x10f;
+    ret = ytphy_write_ext(phydev, YT8521_EXTREG_LED1, val);
+    if (ret < 0){
+		return ret;
+	}
+
+    val = ytphy_read_ext(phydev, YT8521_EXTREG_LED2);
+    if (val < 0){
+		return val;
+	}
+
+	/* when rx and tx send or recive msg make led link  as stats led*/
+    val = 0x70;
+    ret = ytphy_write_ext(phydev, YT8521_EXTREG_LED2, val);
+
+    return ret;
+}
+
+/**
  * yt8521_config_init() - called to initialize the PHY
  * @phydev: a pointer to a &struct phy_device
  *
@@ -1603,6 +1688,14 @@ static int yt8521_config_init(struct phy_device *phydev)
 		if (ret < 0)
 			goto err_restore_page;
 	}
+	if (yt8531S_led_init(phydev) < 0){
+        netdev_info(phydev->attached_dev,"led init failed");
+	}
+
+	if (yt8531S_delay_init(phydev) < 0){
+        netdev_info(phydev->attached_dev,"get ytphy delay cfg failed,assume dont need it");
+	}
+
 err_restore_page:
 	return phy_restore_page(phydev, old_page, ret);
 }
@@ -2327,3 +2420,4 @@ static const struct mdio_device_id __maybe_unused motorcomm_tbl[] = {
 };
 
 MODULE_DEVICE_TABLE(mdio, motorcomm_tbl);
+
