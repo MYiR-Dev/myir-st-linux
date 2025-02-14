@@ -24,6 +24,7 @@ void __init arm_smccc_version_init(u32 version, enum arm_smccc_conduit conduit)
 {
 	struct arm_smccc_res res;
 
+	return ;
 	smccc_version = version;
 	smccc_conduit = conduit;
 
