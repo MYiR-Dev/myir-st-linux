@@ -152,7 +152,6 @@ static struct at9555_platform_data *at9555_parse_dt(struct device_node *np) {
 static int at9555_gpio_probe(struct i2c_client *client) {
     int status;
     struct at9555_platform_data *pdata = dev_get_platdata(&client->dev);
-    const struct i2c_device_id *id = i2c_client_get_device_id(client);
     int ret, i;
 
     // struct device_node		*np = client->dev.of_node;
