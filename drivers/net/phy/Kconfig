@@ -271,6 +271,11 @@ config MICROCHIP_PHY
 	help
 	  Supports the LAN88XX PHYs.
 
+config MICROCHIP_PHY
+        tristate "Microchip PHYs"
+        help
+          Supports the LAN88XX PHYs.
+
 config MICROCHIP_T1_PHY
 	tristate "Microchip T1 PHYs"
 	help

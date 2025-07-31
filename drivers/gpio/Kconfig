@@ -1014,6 +1014,13 @@ endmenu
 menu "I2C GPIO expanders"
 	depends on I2C
 
+
+config GPIO_AT9555
+       tristate "at9555 I/O ports"
+       depends on OF && I2C
+       help
+         Select this to enable the AT9555 GPIO driver
+
 config GPIO_ADNP
 	tristate "Avionic Design N-bit GPIO expander"
 	depends on OF_GPIO
