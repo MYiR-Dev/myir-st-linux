@@ -1,0 +1,78 @@
+// SPDX-License-Identifier: (GPL-2.0+ OR BSD-3-Clause)
+/*
+ * Copyright (C) MYiR 2022 - All Rights Reserved
+ * Author: Alexhu <fan.hu@myirtech.com> for MYiR.
+ */
+
+/dts-v1/;
+
+
+#include "myb-stm32mp135x-base.dtsi"
+
+/ {
+        model = "STMicroelectronics STM32MP135F-DK Discovery Board";
+        compatible = "st,stm32mp135f-dk", "st,stm32mp135";
+
+	aliases {
+		ethernet0 = &ethernet1;
+		ethernet1 = &ethernet2;
+		serial0 = &uart4;
+		serial1 = &uart7;
+		serial2 = &uart5;
+	};
+
+	chosen {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+		stdout-path = "serial0:115200n8";
+
+		// framebuffer {
+		// 	compatible = "simple-framebuffer";
+		// 	clocks = <&rcc LTDC_PX>;
+		// 	status = "disabled";
+		// };
+	};
+
+	memory@c0000000 {
+		device_type = "memory";
+		reg = <0xc0000000 0x10000000>;
+	};
+
+	reserved-memory {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+
+		optee_framebuffer@cd000000 {
+			reg = <0xcd000000 0x1000000>;
+			no-map;
+		};
+		optee@ce000000 {
+			reg = <0xce000000 0x2000000>;
+			no-map;
+		};
+	};
+
+};
+
+&qspi {
+        pinctrl-names = "default", "sleep";
+        pinctrl-0 = <&quadspi_pins_mx>;
+        pinctrl-1 = <&quadspi_sleep_pins_mx>;
+        reg = <0x58003000 0x1000>,
+              <0x70000000 0x4000000>;
+        #address-cells = <1>;
+        #size-cells = <0>;
+        status = "okay";
+
+        flash0: MX35LF2G24AD@0 {
+                compatible = "spi-nand";
+                reg = <0>;
+                spi-rx-bus-width = <4>;
+                spi-tx-bus-width = <4>;
+                spi-max-frequency = <108000000>;
+                #address-cells = <1>;
+                #size-cells = <1>;
+        };
+};
