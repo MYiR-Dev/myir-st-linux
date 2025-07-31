@@ -32,6 +32,7 @@ subdir-y += samsung
 subdir-y += sigmastar
 subdir-y += socionext
 subdir-y += st
+subdir-y += myir
 subdir-y += sunplus
 subdir-y += synaptics
 subdir-y += ti

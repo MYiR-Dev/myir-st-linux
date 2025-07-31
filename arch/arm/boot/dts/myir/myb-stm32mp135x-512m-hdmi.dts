@@ -1,0 +1,62 @@
+// SPDX-License-Identifier: (GPL-2.0+ OR BSD-3-Clause)
+/*
+ * Copyright (C) MYiR 2022 - All Rights Reserved
+ * Author: Alexhu <fan.hu@myirtech.com> for MYiR.
+ */
+
+/dts-v1/;
+
+#include "myb-stm32mp135x-512m.dts"
+
+&panel_ltdc_rgb{
+	status = "disabled";
+};
+
+&ltdc {
+	pinctrl-names = "default", "sleep";
+	pinctrl-0 = <&ltdc_pins_a>;
+	pinctrl-1 = <&ltdc_sleep_pins_a>;
+
+	status = "okay";
+	port {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		ltdc_out_hdmi: endpoint@1 {
+				reg = <1>;
+				remote-endpoint = <&sii9022_in>;
+		};
+	};
+};
+
+&i2c3{
+		sii902x: sii902x@39 {
+		compatible = "sil,sii9022";
+		reg = <0x39>;
+
+		/*  hdmi mode
+			0: 720p@60HZ
+			1: 720p@50HZ
+			2: 1024x768@50HZ
+		*/
+		hdmi_mode = <0>;
+		iovcc-supply = <&v3v3_hdmi>;
+		cvcc12-supply = <&v1v2_hdmi>;
+		interrupts = <0 IRQ_TYPE_EDGE_FALLING>;
+		interrupt-parent = <&gpioi>;
+		reset-gpios = <&gpioa 11 GPIO_ACTIVE_LOW>;
+		status = "okay";
+
+		ports {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			port@1 {
+				reg = <1>;
+				sii9022_in: endpoint {
+					remote-endpoint = <&ltdc_out_hdmi>;
+				};
+			};
+		};
+	};
+};
