@@ -116,8 +116,7 @@
 	};
 
 	panel_rgb: panel-rgb {
-		//compatible = "panel-dpi";
-		compatible = "myir,070tft-7";
+		compatible = "panel-dpi";
 		enable-gpios = <&gpioi 7 GPIO_ACTIVE_HIGH>;
 		backlight = <&panel_backlight>;
 		power-supply = <&v3v3_panle>;
@@ -187,7 +186,7 @@
                 regulator-always-on;
         };
 
-	v3v3_ao: v3v3-ao {
+	v3v3_ao: v3v3_ao {
 		compatible = "regulator-fixed";
 		regulator-name = "v3v3_ao";
 		regulator-min-microvolt = <3300000>;
@@ -244,28 +243,32 @@
 	};*/
 
 
-        /*sound {
-                compatible = "audio-graph-card";
-                widgets = "Headphone", "Headphone Jack",
-                          "Line", "Line In Jack",
-                          "Microphone", "Microphone Jack";
-                routing = "Headphone Jack", "HP_OUT",
-                          "LINE_IN", "Line In Jack",
-                          "MIC_IN", "Microphone Jack",
-                          "Microphone Jack", "Mic Bias";
-                dais = <&sai1a_port &sai1b_port>;
-                status = "okay";
-        };*/
-	sound {
-		compatible = "audio-graph-card";
-		label = "STM32MP13-Audio";			/* Sound card identified as STM32MP15DK in ALSA */
-		routing =
-			"Playback" , "MCLK",
-			"Capture" , "MCLK",
-			"MICL" , "Mic Bias";
-		dais = <&i2s1_port>;
-		status = "okay";
-	};
+        sound: audio {
+                compatible = "simple-audio-card";
+                simple-audio-card,name = "MYD-YF13X-Audio";
+                simple-audio-card,format = "i2s";
+                simple-audio-card,bitclock-master = <&codec_dai>;
+                simple-audio-card,frame-master = <&codec_dai>;
+                simple-audio-card,mclk-fs = <256>;
+
+                simple-audio-card,widgets =
+                        "Microphone", "Microphone Jack",
+                        "Headphone", "Headphone Jack",
+                        "Speaker", "Speaker Ext",
+                        "Line", "Line In Jack";
+                simple-audio-card,routing =
+                                "MIC_IN", "Microphone Jack",
+                                "Microphone Jack", "Mic Bias",
+                                "Headphone Jack", "HP_OUT";
+
+                cpu_dai: simple-audio-card,cpu {
+                                sound-dai = <&i2s1>;
+                };
+
+                codec_dai: simple-audio-card,codec {
+                                sound-dai = <&sgtl5000>;
+                };
+    };
 };
 
 &adc_1 {
@@ -354,10 +357,12 @@
 		compatible = "snps,dwmac-mdio";
 
 		phy0_eth1: ethernet-phy@0 {
-			compatible = "ethernet-phy-id0007.c131";
-			reset-gpios =  <&gpiob 10 GPIO_ACTIVE_HIGH>;
+			compatible = "ethernet-phy-ieee802.3-c22";
+			reset-gpios =  <&gpiob 10 GPIO_ACTIVE_LOW>;
 			reset-assert-us = <1000>;
 			reset-deassert-us = <30000>;
+  			motorcomm,clk-out-frequency-hz = <125000000>;
+                        motorcomm,keep-pll-enabled;
 			reg = <0>;
 			wakeup-source;
 		};
@@ -381,12 +386,14 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 		compatible = "snps,dwmac-mdio";
-		phy0_eth2: ethernet-phy@0 {
-			compatible = "ethernet-phy-id0007.c131";
-			reset-gpios = <&gpioh 5 GPIO_ACTIVE_HIGH>;
+		phy0_eth2: ethernet-phy@2 {
+			compatible = "ethernet-phy-ieee802.3-c22";
+			reset-gpios = <&gpioh 5 GPIO_ACTIVE_LOW>;
 			reset-assert-us = <1000>;
 			reset-deassert-us = <30000>;
-			reg = <0>;
+            		motorcomm,clk-out-frequency-hz = <125000000>;
+                        motorcomm,keep-pll-enabled;
+			reg = <2>;
 		};
 	};
 };
@@ -490,8 +497,8 @@
 	/delete-property/dma-names;
 	status = "okay";
 	pwm1: pwm {
-		pinctrl-0 = <&pwm1_ch3n_pins_a>;
-		pinctrl-1 = <&pwm1_ch3n_sleep_pins_a>;
+		pinctrl-0 = <&pwm1_ch4_pins_a>;
+		pinctrl-1 = <&pwm1_ch4_sleep_pins_a>;
 		pinctrl-names = "default", "sleep";
 		status = "okay";
 	};
@@ -656,11 +663,11 @@
                 port {
                         #address-cells = <0x1>;
                         #size-cells = <0x0>;
-            port@0 {
-                reg = <0>;
-                sgtl5000_endpoint: endpoint {
+            		port@0 {
+                		reg = <0>;
+                		sgtl5000_endpoint: endpoint {
                                         remote-endpoint = <&i2s1_endpoint>;
-                };
+                		};
                         };
                 };
         };
@@ -699,7 +706,6 @@
 
     i2s1_port: port {
         i2s1_endpoint: endpoint {
-		format = "i2s";
             remote-endpoint = <&sgtl5000_endpoint>;
         };
     };
