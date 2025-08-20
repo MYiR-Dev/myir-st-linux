@@ -1289,6 +1289,7 @@ static int stm32_i2s_probe(struct platform_device *pdev)
 	struct stm32_i2s_data *i2s;
 	u32 val;
 	int ret;
+	struct device_node *np = pdev->dev.of_node;
 
 	i2s = devm_kzalloc(&pdev->dev, sizeof(*i2s), GFP_KERNEL);
 	if (!i2s)
@@ -1331,6 +1332,15 @@ static int stm32_i2s_probe(struct platform_device *pdev)
 				 I2S_CGFR_I2SMOD, I2S_CGFR_I2SMOD);
 	if (ret)
 		goto error;
+
+        /* i2s ioswp if requested */
+        if (of_find_property(np, "i2s-ioswp", NULL)) {
+                /* Set I2S IOSWP in i2s mode */
+                ret = regmap_update_bits(i2s->regmap, STM32_I2S_CFG2_REG,
+                                  I2S_CFG2_IOSWP, I2S_CFG2_IOSWP);
+                if (ret)
+                        goto error;
+        }
 
 	ret = regmap_read(i2s->regmap, STM32_I2S_IPIDR_REG, &val);
 	if (ret)
