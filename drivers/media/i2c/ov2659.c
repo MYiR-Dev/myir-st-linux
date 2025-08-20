@@ -776,13 +776,13 @@ static const struct ov2659_framesize ov2659_framesizes[] = {
 
 /* YUV422 YUYV*/
 static struct sensor_register ov2659_format_yuyv[] = {
-	{ REG_FORMAT_CTRL00, 0x30 },
+	{ REG_FORMAT_CTRL00, 0x32 },
 	{ REG_NULL, 0x0 },
 };
 
 /* YUV422 UYVY  */
 static struct sensor_register ov2659_format_uyvy[] = {
-	{ REG_FORMAT_CTRL00, 0x32 },
+	{ REG_FORMAT_CTRL00, 0x30 },
 	{ REG_NULL, 0x0 },
 };
 
@@ -947,8 +947,8 @@ static int ov2659_set_pixel_clock(struct ov2659 *ov2659)
 
 static void ov2659_get_default_format(struct v4l2_mbus_framefmt *format)
 {
-	format->width = ov2659_framesizes[2].width;
-	format->height = ov2659_framesizes[2].height;
+	format->width = ov2659_framesizes[1].width;
+	format->height = ov2659_framesizes[1].height;
 	format->colorspace = V4L2_COLORSPACE_SRGB;
 	format->code = ov2659_formats[0].code;
 	format->field = V4L2_FIELD_NONE;
@@ -1267,7 +1267,7 @@ static int ov2659_power_off(struct device *dev)
 
 	dev_dbg(&client->dev, "%s:\n", __func__);
 
-	gpiod_set_value(ov2659->pwdn_gpio, 1);
+	gpiod_set_value_cansleep(ov2659->pwdn_gpio, 1);
 
 	clk_disable_unprepare(ov2659->clk);
 
@@ -1290,12 +1290,12 @@ static int ov2659_power_on(struct device *dev)
 		return ret;
 	}
 
-	gpiod_set_value(ov2659->pwdn_gpio, 0);
+	gpiod_set_value_cansleep(ov2659->pwdn_gpio, 0);
 
 	if (ov2659->resetb_gpio) {
-		gpiod_set_value(ov2659->resetb_gpio, 1);
+		gpiod_set_value_cansleep(ov2659->resetb_gpio, 1);
 		usleep_range(500, 1000);
-		gpiod_set_value(ov2659->resetb_gpio, 0);
+		gpiod_set_value_cansleep(ov2659->resetb_gpio, 0);
 		usleep_range(3000, 5000);
 	}
 
@@ -1510,7 +1510,7 @@ static int ov2659_probe(struct i2c_client *client)
 	mutex_init(&ov2659->lock);
 
 	ov2659_get_default_format(&ov2659->format);
-	ov2659->frame_size = &ov2659_framesizes[2];
+	ov2659->frame_size = &ov2659_framesizes[1];
 	ov2659->format_ctrl_regs = ov2659_formats[0].format_ctrl_regs;
 
 	ret = ov2659_power_on(&client->dev);

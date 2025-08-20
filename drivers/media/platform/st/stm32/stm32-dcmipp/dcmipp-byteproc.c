@@ -113,7 +113,8 @@ struct dcmipp_byteproc_device {
 static const struct v4l2_mbus_framefmt fmt_default = {
 	.width = DCMIPP_FMT_WIDTH_DEFAULT,
 	.height = DCMIPP_FMT_HEIGHT_DEFAULT,
-	.code = MEDIA_BUS_FMT_RGB565_2X8_LE,
+	//.code = MEDIA_BUS_FMT_RGB565_2X8_LE,
+	.code = MEDIA_BUS_FMT_YUYV8_2X8,
 	.field = V4L2_FIELD_NONE,
 	.colorspace = DCMIPP_COLORSPACE_DEFAULT,
 	.ycbcr_enc = DCMIPP_YCBCR_ENC_DEFAULT,

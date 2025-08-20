@@ -160,7 +160,7 @@ struct dcmipp_bytecap_device {
 static const struct v4l2_pix_format fmt_default = {
 	.width = DCMIPP_FMT_WIDTH_DEFAULT,
 	.height = DCMIPP_FMT_HEIGHT_DEFAULT,
-	.pixelformat = V4L2_PIX_FMT_RGB565,
+	.pixelformat = V4L2_PIX_FMT_YUYV,
 	.field = V4L2_FIELD_NONE,
 	.bytesperline = DCMIPP_FMT_WIDTH_DEFAULT * 2,
 	.sizeimage = DCMIPP_FMT_WIDTH_DEFAULT * DCMIPP_FMT_HEIGHT_DEFAULT * 2,
@@ -323,6 +323,36 @@ static int dcmipp_bytecap_enum_framesizes(struct file *file, void *fh,
 	return 0;
 }
 
+/*
+ * Video node IOCTLs
+ */
+static int dcmipp_vidioc_enum_input(struct file *file, void *priv,
+                                 struct v4l2_input *inp)
+{
+        if (inp->index != 0)
+                return -EINVAL;
+
+        /* default is camera */
+        inp->type = V4L2_INPUT_TYPE_CAMERA;
+        strcpy(inp->name, "Camera");
+
+        return 0;
+}
+static int dcmipp_vidioc_g_input(struct file *file, void *priv, unsigned int *i)
+{
+        *i = 0;
+
+        return 0;
+}
+
+static int dcmipp_vidioc_s_input(struct file *file, void *priv, unsigned int i)
+{
+        if (i > 0)
+                return -EINVAL;
+
+        return 0;
+}
+
 static const struct v4l2_file_operations dcmipp_bytecap_fops = {
 	.owner		= THIS_MODULE,
 	.open		= v4l2_fh_open,
@@ -341,6 +371,10 @@ static const struct v4l2_ioctl_ops dcmipp_bytecap_ioctl_ops = {
 	.vidioc_try_fmt_vid_cap = dcmipp_bytecap_try_fmt_vid_cap,
 	.vidioc_enum_fmt_vid_cap = dcmipp_bytecap_enum_fmt_vid_cap,
 	.vidioc_enum_framesizes = dcmipp_bytecap_enum_framesizes,
+
+      	.vidioc_enum_input        = dcmipp_vidioc_enum_input,
+        .vidioc_g_input       = dcmipp_vidioc_g_input,
+        .vidioc_s_input       = dcmipp_vidioc_s_input,
 
 	.vidioc_reqbufs = vb2_ioctl_reqbufs,
 	.vidioc_create_bufs = vb2_ioctl_create_bufs,

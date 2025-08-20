@@ -203,7 +203,8 @@ struct dcmipp_pixelcap_device {
 static const struct v4l2_pix_format fmt_default = {
 	.width = DCMIPP_FMT_WIDTH_DEFAULT,
 	.height = DCMIPP_FMT_HEIGHT_DEFAULT,
-	.pixelformat = V4L2_PIX_FMT_RGB565,
+	//.pixelformat = V4L2_PIX_FMT_RGB565,
+	.pixelformat = V4L2_PIX_FMT_YUYV,
 	.field = V4L2_FIELD_NONE,
 	.bytesperline = DCMIPP_FMT_WIDTH_DEFAULT * 2,
 	.sizeimage = DCMIPP_FMT_WIDTH_DEFAULT * DCMIPP_FMT_HEIGHT_DEFAULT * 2,
