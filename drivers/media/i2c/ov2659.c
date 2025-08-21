@@ -776,13 +776,13 @@ static const struct ov2659_framesize ov2659_framesizes[] = {
 
 /* YUV422 YUYV*/
 static struct sensor_register ov2659_format_yuyv[] = {
-	{ REG_FORMAT_CTRL00, 0x32 },
+	{ REG_FORMAT_CTRL00, 0x30 },
 	{ REG_NULL, 0x0 },
 };
 
 /* YUV422 UYVY  */
 static struct sensor_register ov2659_format_uyvy[] = {
-	{ REG_FORMAT_CTRL00, 0x30 },
+	{ REG_FORMAT_CTRL00, 0x32 },
 	{ REG_NULL, 0x0 },
 };
 
