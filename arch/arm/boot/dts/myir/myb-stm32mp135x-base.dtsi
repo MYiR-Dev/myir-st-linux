@@ -120,7 +120,8 @@
 		enable-gpios = <&gpioi 7 GPIO_ACTIVE_HIGH>;
 		backlight = <&panel_backlight>;
 		power-supply = <&v3v3_panle>;
-		data-mapping = "bgr666";
+		//data-mapping = "bgr666";
+		data-mapping = "rgb24";
 		default-on;
 		status = "okay";
 

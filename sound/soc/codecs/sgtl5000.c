@@ -867,7 +867,7 @@ static int sgtl5000_set_dai_sysclk(struct snd_soc_dai *codec_dai,
 
 	switch (clk_id) {
 	case SGTL5000_SYSCLK:
-		sgtl5000->sysclk = freq;
+		sgtl5000->sysclk = 12000000;
 		break;
 	default:
 		return -EINVAL;
