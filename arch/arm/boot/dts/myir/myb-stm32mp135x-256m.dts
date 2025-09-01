@@ -117,7 +117,7 @@
  		};
 
  		partition@8 {
-         		label = "ubi";
+         		label = "UBI";
          		reg = <0x1200000 0xEE00000>;  // 剩余空间
  		};	
         };
