@@ -10,7 +10,7 @@
 #include "myb-stm32mp135x-base.dtsi"
 
 / {
-        model = "STMicroelectronics STM32MP135F-DK Discovery Board";
+        model = "STMicroelectronics MYD-YF13X-NAND Discovery Board";
         compatible = "st,stm32mp135f-dk", "st,stm32mp135";
 
 	aliases {
@@ -74,5 +74,51 @@
                 spi-max-frequency = <108000000>;
                 #address-cells = <1>;
                 #size-cells = <1>;
+		label = "spi-nand0";
+
+	         partition@0 {
+         		label = "fsbl1";
+         		reg = <0x000000 0x80000>;  // 512k
+ 		};
+
+ 		partition@1 {
+         		label = "fsbl2";
+         		reg = <0x80000 0x80000>;  // 512k
+ 		};
+
+ 		partition@2 {
+         		label = "metadata1";
+         		reg = <0x100000 0x80000>;  // 512k
+	        };
+
+ 		partition@3 {
+         		label = "metadata2";
+         		reg = <0x180000 0x80000>;  // 512k
+ 		};
+
+ 		partition@4 {
+         		label = "fip-a1";
+         		reg = <0x200000 0x400000>;  // 4MB
+ 		};
+
+ 		partition@5 {
+         		label = "fip-a2";
+         		reg = <0x600000 0x400000>;  // 4MB
+ 		};
+
+ 		partition@6 {
+         		label = "fip-b1";
+         		reg = <0xa00000 0x400000>;  // 4MB
+ 		};
+
+ 		partition@7 {
+         		label = "fip-b2";
+         		reg = <0xe00000 0x400000>;  // 4MB
+ 		};
+
+ 		partition@8 {
+         		label = "ubi";
+         		reg = <0x1200000 0x10000000>;  // 剩余空间
+ 		};	
         };
 };
