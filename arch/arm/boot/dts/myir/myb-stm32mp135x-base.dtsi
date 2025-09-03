@@ -580,7 +580,7 @@
         /delete-property/dma-names;
 
         rx8025: rx8025@32 {
-                compatible = "epson,rx8025t";
+                compatible = "epson,rx8025";
                 reg = <0x32>;
         };
 
