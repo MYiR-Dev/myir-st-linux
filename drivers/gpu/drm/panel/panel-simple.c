@@ -149,6 +149,7 @@ struct panel_simple {
 	struct i2c_adapter *ddc;
 
 	struct gpio_desc *enable_gpio;
+	struct gpio_desc *reset_gpio;
 
 	struct edid *edid;
 
@@ -602,6 +603,13 @@ static int panel_simple_probe(struct device *dev, const struct panel_desc *desc)
 	if (IS_ERR(panel->enable_gpio))
 		return dev_err_probe(dev, PTR_ERR(panel->enable_gpio),
 				     "failed to request GPIO\n");
+
+        panel->reset_gpio = devm_gpiod_get_optional(dev, "reset", GPIOD_OUT_HIGH);
+        if (IS_ERR(panel->reset_gpio)) {
+                        err = PTR_ERR(panel->reset_gpio);
+                        dev_err(dev, "cannot get reset-gpios %d\n", err);
+                        return err;
+        }
 
 	err = of_drm_get_panel_orientation(dev->of_node, &panel->orientation);
 	if (err) {
