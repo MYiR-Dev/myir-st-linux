@@ -500,6 +500,7 @@
         pinctrl-0 = <&uart7_pins_a>;
         pinctrl-1 = <&uart7_sleep_pins_a>;
         pinctrl-2 = <&uart7_idle_pins_a>;
+	rts-gpios = <&gpiod 12 GPIO_ACTIVE_HIGH>;
         /delete-property/dmas;
         /delete-property/dma-names;
         status = "okay";
@@ -580,7 +581,7 @@
         /delete-property/dma-names;
 
         rx8025: rx8025@32 {
-                compatible = "epson,rx8025";
+                compatible = "epson,rx8025t";
                 reg = <0x32>;
         };
 
