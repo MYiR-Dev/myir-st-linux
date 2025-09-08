@@ -588,7 +588,7 @@
         at24@50 {
                         compatible = "atmel,24c32";
                         pagesize = <64>;
-			wp-gpios = <&gpioa 14 0>;
+			wp-gpios = <&gpioa 14 1>;
                         reg = <0x50>;
         };
 
