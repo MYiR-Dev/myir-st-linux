@@ -501,6 +501,10 @@
         pinctrl-1 = <&uart7_sleep_pins_a>;
         pinctrl-2 = <&uart7_idle_pins_a>;
 	rts-gpios = <&gpiod 12 GPIO_ACTIVE_HIGH>;
+ 	rs485-rts-active-high;
+        rs485-rx-during-tx;
+        rs485-rts-delay = <1 1>;
+        linux,rs485-enabled-at-boot-time;
         /delete-property/dmas;
         /delete-property/dma-names;
         status = "okay";
