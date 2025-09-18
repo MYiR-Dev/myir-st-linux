@@ -592,7 +592,7 @@
         at24@50 {
                         compatible = "atmel,24c32";
                         pagesize = <64>;
-			wp-gpios = <&gpioa 14 1>;
+			protect-gpios = <&gpioa 14 GPIO_ACTIVE_HIGH>;
                         reg = <0x50>;
         };
 

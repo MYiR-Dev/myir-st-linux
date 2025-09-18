@@ -24,6 +24,9 @@
 #include <linux/regmap.h>
 #include <linux/regulator/consumer.h>
 #include <linux/slab.h>
+#include <linux/gpio/consumer.h>
+#include <linux/gpio.h>
+#include <linux/of_gpio.h>
 
 /* Address pointer is 16 bit. */
 #define AT24_FLAG_ADDR16	BIT(7)
@@ -82,6 +85,7 @@ struct at24_data {
 	u32 byte_len;
 	u16 page_size;
 	u8 flags;
+	struct gpio_desc *wp_gpio;
 
 	struct nvmem_device *nvmem;
 	struct regulator *vcc_reg;
@@ -472,6 +476,7 @@ static int at24_write(void *priv, unsigned int off, void *val, size_t count)
 	at24 = priv;
 	dev = at24_base_client_dev(at24);
 
+
 	if (unlikely(!count))
 		return -EINVAL;
 
@@ -483,6 +488,13 @@ static int at24_write(void *priv, unsigned int off, void *val, size_t count)
 		pm_runtime_put_noidle(dev);
 		return ret;
 	}
+
+    	if (!IS_ERR(at24->wp_gpio)) {
+        	gpiod_set_value(at24->wp_gpio, 0);  // 将 GPIO 设置为低电平，禁用写保护
+        	dev_info(dev, "WP GPIO set to low, write protection disabled\n");
+    	} else {
+        	dev_warn(dev, "WP GPIO is not configured, skipping write protection disable\n");
+    	}
 
 	/*
 	 * Write data to chip, protecting against concurrent updates
@@ -503,6 +515,13 @@ static int at24_write(void *priv, unsigned int off, void *val, size_t count)
 	}
 
 	mutex_unlock(&at24->lock);
+
+    	if (!IS_ERR(at24->wp_gpio)) {
+        	gpiod_set_value(at24->wp_gpio, 1);  // 将 GPIO 设置为高电平，启用写保护
+        	dev_info(dev, "WP GPIO set to high, write protection enabled\n");
+    	} else {
+        	dev_warn(dev, "WP GPIO is not configured, skipping write protection enable\n");
+    	}
 
 	pm_runtime_put(dev);
 
@@ -626,9 +645,16 @@ static int at24_probe(struct i2c_client *client)
 	i2c_fn_block = i2c_check_functionality(client->adapter,
 					       I2C_FUNC_SMBUS_WRITE_I2C_BLOCK);
 
+
 	cdata = at24_get_chip_data(dev);
 	if (IS_ERR(cdata))
 		return PTR_ERR(cdata);
+
+   	at24 = devm_kzalloc(&client->dev, sizeof(*at24), GFP_KERNEL);
+        if (!at24)
+                return -ENOMEM;
+
+        i2c_set_clientdata(client, at24);
 
 	err = device_property_read_u32(dev, "pagesize", &page_size);
 	if (err)
@@ -686,6 +712,12 @@ static int at24_probe(struct i2c_client *client)
 			num_addresses =	DIV_ROUND_UP(byte_len,
 				(flags & AT24_FLAG_ADDR16) ? 65536 : 256);
 	}
+
+        at24->wp_gpio = devm_gpiod_get_optional(&client->dev, "protect",GPIOD_OUT_LOW);
+
+        if (IS_ERR(at24->wp_gpio)) {
+        	dev_err(dev, "Failed to get wp gpio: %ld\n", PTR_ERR(at24->wp_gpio));
+        }
 
 	if ((flags & AT24_FLAG_SERIAL) && (flags & AT24_FLAG_MAC)) {
 		dev_err(dev,
