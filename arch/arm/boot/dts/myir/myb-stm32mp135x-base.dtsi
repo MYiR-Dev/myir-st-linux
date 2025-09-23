@@ -75,6 +75,7 @@
 		reg = <0xc0000000 0x20000000>;
 	};
 
+
 	reserved-memory {
 		#address-cells = <1>;
 		#size-cells = <1>;
@@ -237,6 +238,35 @@
 		reset-gpios = <&mcp23017 11 GPIO_ACTIVE_LOW>;
 	};*/
 
+        connector {
+		compatible = "gpio-usb-b-connector", "usb-b-connector";
+                label = "USB-C";
+                data-role = "dual";
+                id-gpios = <&gpioa 10 (GPIO_ACTIVE_HIGH | GPIO_PULL_UP)>;
+                vbus-gpios = <&gpioi 3 GPIO_ACTIVE_HIGH>;
+                vbus-supply = <&v3v3_hdmi>;
+
+                ports {
+                        #address-cells = <1>;
+                        #size-cells = <0>;
+
+                        port@0 {
+                                reg = <0>;
+
+                                usb_c_0_hs_ep: endpoint {
+                                        remote-endpoint = <&dwc2_0_hs_ep>;
+                                };
+                        };
+
+                        port@1 {
+                                reg = <1>;
+
+                                usb_c_0_ss_ep: endpoint {
+                                        remote-endpoint = <&ptn5150_in_ep>;
+                                };
+                        };
+                };
+        };
 
         sound: audio {
                 compatible = "simple-audio-card";
@@ -532,14 +562,21 @@
 	phys = <&usbphyc_port1 0>;
 	phy-names = "usb2-phy";
 	usb-role-switch;
-    	dr_mode = "otg";
-        role-switch-default-mode = "peripheral";
 	status = "okay";
-	port {
-		usbotg_hs_ep: endpoint {
-			remote-endpoint = <&con_usb_c_ep>;
-		};
-	};
+  	 port {
+                #address-cells = <1>;
+                #size-cells = <0>;
+
+                dwc2_0_hs_ep: endpoint@0 {
+                        reg = <0>;
+                        remote-endpoint = <&usb_c_0_hs_ep>;
+                };
+
+                dwc2_0_ss_ep: endpoint@1 {
+                        reg = <1>;
+                        remote-endpoint = <&ptn5150_out_ep>;
+                };
+        };
 };
 
 &usbphyc {
@@ -603,16 +640,27 @@
                 reg = <0x3d>;
 
                 status = "okay";
-                int-gpios = <&gpioa 13 GPIO_ACTIVE_HIGH>;
-                connector {
-                        compatible = "usb-c-connector";
-                        label = "USB-C";
-                        port {
-                                con_usb_c_ep: endpoint {
-                                        remote-endpoint = <&usbotg_hs_ep>;
+		interrupt-parent = <&gpioa>;
+                interrupts = <13  IRQ_TYPE_EDGE_FALLING>;
+
+         	ports {
+                         #address-cells = <1>;
+                         #size-cells = <0>;
+
+                         port@0 {
+                               reg = <0>;
+                               ptn5150_in_ep: endpoint {
+                               	      remote-endpoint = <&usb_c_0_ss_ep>;
+                                   };
+                               };
+
+                         port@1 {
+                               reg = <1>;
+                               ptn5150_out_ep: endpoint {
+                                      remote-endpoint = <&dwc2_0_ss_ep>;
+                                     };
                                 };
-                        };
-                };
+                  };
         };
 
         ov2659: camera@30 {
