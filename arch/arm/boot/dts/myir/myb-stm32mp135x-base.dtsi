@@ -715,8 +715,8 @@
               interrupt-parent = <&gpioi>;
               interrupts = <7  IRQ_TYPE_EDGE_FALLING>;
               interrupt-controller;
-              touchscreen-size-x = <1024>;
-              touchscreen-size-y = <600>;
+              touchscreen-size-x = <800>;
+              touchscreen-size-y = <480>;
 
               reset-gpios = <&gpioi 2 GPIO_ACTIVE_LOW>;
               status = "okay";
