@@ -65,6 +65,9 @@
 };
 
 &eth2 {
+     	snps,reset-gpio = <&gpiob 2 GPIO_ACTIVE_LOW>;
+        snps,reset-active-low;
+        snps,reset-delays-us = <0 30000 50000>;
 	status = "okay";
 	pinctrl-0 = <&eth2_rgmii_pins_a>;
 	pinctrl-1 = <&eth2_rgmii_sleep_pins_a>;
@@ -75,16 +78,20 @@
 	st,eth-ptp-from-rcc;
 	st,ext-phyclk = <&clk_ext_phy2>;
 
-	st,phy-reset-gpios =  <&gpiob 2 GPIO_ACTIVE_HIGH>;
-	st,reset-assert-us = <15000>;
-	st,reset-deassert-us = <15000>;
+	//st,phy-reset-gpios =  <&gpiob 2 GPIO_ACTIVE_HIGH>;
+	//st,reset-assert-us = <15000>;
+	//st,reset-deassert-us = <15000>;
 
 	mdio1 {
 		#address-cells = <1>;
 		#size-cells = <0>;
 		compatible = "snps,dwmac-mdio";
 		phy1_eth2: ethernet-phy@5 {
-			ytphy_delay_cfg = <0x4f8>;
+          		compatible = "ethernet-phy-ieee802.3-c22";
+                        motorcomm,clk-out-frequency-hz = <125000000>;
+                        motorcomm,keep-pll-enabled;
+                        phy-mode = "rgmii-id";
+			ytphy_delay_cfg = <0x8fa>;
 			reg = <5>;
 		};
 	};
