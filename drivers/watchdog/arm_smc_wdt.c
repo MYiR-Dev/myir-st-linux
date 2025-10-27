@@ -80,6 +80,7 @@ static int smcwd_set_timeout(struct watchdog_device *wdd, unsigned int timeout)
 
 static int smcwd_stop(struct watchdog_device *wdd)
 {
+	printk("stop watchdog test\n");
 	return smcwd_call(wdd, SMCWD_ENABLE, 0, NULL);
 }
 
@@ -109,6 +110,32 @@ static const struct watchdog_ops smcwd_timeleft_ops = {
 	.set_timeout	= smcwd_set_timeout,
 	.get_timeleft	= smcwd_get_timeleft,
 };
+
+#ifdef CONFIG_PM_SLEEP
+static int smcwd_suspend(struct device *dev)
+{
+    struct watchdog_device *wdd = dev_get_drvdata(dev);
+    
+    if (watchdog_active(wdd)) {
+        return smcwd_stop(wdd);
+    }
+    return 0;
+}
+
+static int smcwd_resume(struct device *dev)
+{
+    struct watchdog_device *wdd = dev_get_drvdata(dev);
+    
+    if (watchdog_active(wdd)) {
+        return smcwd_start(wdd);
+    }
+    return 0;
+}
+
+static SIMPLE_DEV_PM_OPS(smcwd_pm_ops, smcwd_suspend, smcwd_resume);
+#endif
+
+
 
 static int smcwd_probe(struct platform_device *pdev)
 {
@@ -182,6 +209,7 @@ static struct platform_driver smcwd_driver = {
 	.driver		= {
 		.name		= DRV_NAME,
 		.of_match_table	= smcwd_dt_ids,
+		.pm = &smcwd_pm_ops,
 	},
 };
 
