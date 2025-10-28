@@ -53,11 +53,21 @@
 		compatible = "snps,dwmac-mdio";
 
 		phy1_eth1: ethernet-phy@4 {
+          		compatible = "ethernet-phy-id001c.c916";
+                        reset-gpios =  <&gpioi 4 GPIO_ACTIVE_LOW>;
+                        reset-assert-us = <10000>;
+                        reset-deassert-us = <80000>;
+                        realtek,eee-disable;
 			reg = <4>;
 			ytphy_delay_cfg = <0x4f5>;
 		};
 
 		phy2_eth1: ethernet-phy@6 {
+             		compatible = "ethernet-phy-id001c.c916";
+                        reset-gpios =  <&gpiod 10 GPIO_ACTIVE_LOW>;
+                        reset-assert-us = <10000>;
+                        reset-deassert-us = <80000>;
+                        realtek,eee-disable;
 			reg = <6>;
 			ytphy_delay_cfg = <0x8f8>;
 		};
@@ -65,9 +75,6 @@
 };
 
 &eth2 {
-     	snps,reset-gpio = <&gpiob 2 GPIO_ACTIVE_LOW>;
-        snps,reset-active-low;
-        snps,reset-delays-us = <0 30000 50000>;
 	status = "okay";
 	pinctrl-0 = <&eth2_rgmii_pins_a>;
 	pinctrl-1 = <&eth2_rgmii_sleep_pins_a>;
@@ -87,10 +94,12 @@
 		#size-cells = <0>;
 		compatible = "snps,dwmac-mdio";
 		phy1_eth2: ethernet-phy@5 {
-          		compatible = "ethernet-phy-ieee802.3-c22";
-                        motorcomm,clk-out-frequency-hz = <125000000>;
-                        motorcomm,keep-pll-enabled;
-                        phy-mode = "rgmii-id";
+        		compatible = "ethernet-phy-id001c.c916";
+                        reset-gpios =  <&gpiob 2 GPIO_ACTIVE_LOW>;
+                        reset-assert-us = <10000>;
+                        reset-deassert-us = <80000>;
+                        realtek,eee-disable;
+			motorcomm,keep-pll-enabled;
 			ytphy_delay_cfg = <0x8fa>;
 			reg = <5>;
 		};
