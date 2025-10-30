@@ -1322,6 +1322,11 @@
 	pinctrl-0 = <&uart9_pins_a>;
 	pinctrl-1 = <&uart9_idle_pins_a>;
 	pinctrl-2 = <&uart9_sleep_pins_a>;
+	rts-gpios = <&gpioi 10 GPIO_ACTIVE_HIGH>;
+        rs485-rts-active-high;
+        rs485-rx-during-tx;
+        rs485-rts-delay = <1 1>;
+        linux,rs485-enabled-at-boot-time;
 	status = "okay";
 };
 
