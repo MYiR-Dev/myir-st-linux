@@ -507,6 +507,7 @@
         bus-width = <8>;
         vmmc-supply = <&vddmmc>;
         vqmmc-supply = <&vdd1v8>;
+        mmc-ddr-3_3v;
         #address-cells = <1>;
         #size-cells = <0>;
         status = "okay";
