@@ -497,9 +497,9 @@
 &sdmmc2 {
 	arm,primecell-periphid = <0x10153180>;
 	pinctrl-names = "default", "opendrain", "sleep";
-	pinctrl-0 = <&sdmmc2_b4_pins_a &sdmmc2_clk_pins_a>;
-	pinctrl-1 = <&sdmmc2_b4_od_pins_a &sdmmc2_clk_pins_a>;
-	pinctrl-2 = <&sdmmc2_b4_sleep_pins_a>;
+	pinctrl-0 = <&sdmmc2_b4_pins_a &sdmmc2_d47_pins_a &sdmmc2_clk_pins_a>;
+	pinctrl-1 = <&sdmmc2_b4_od_pins_a &sdmmc2_d47_pins_a &sdmmc2_clk_pins_a>;
+	pinctrl-2 = <&sdmmc2_b4_sleep_pins_a &sdmmc2_d47_sleep_pins_a>;
 	non-removable;
         no-sd;
         no-sdio;
@@ -508,8 +508,6 @@
         vmmc-supply = <&vddmmc>;
         vqmmc-supply = <&vdd1v8>;
         mmc-ddr-3_3v;
-        #address-cells = <1>;
-        #size-cells = <0>;
         status = "okay";
 };
 
