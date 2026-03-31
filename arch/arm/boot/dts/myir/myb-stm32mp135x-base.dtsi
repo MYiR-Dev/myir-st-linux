@@ -634,7 +634,6 @@
 
         at24@50 {
                         compatible = "atmel,24c32";
-                        pagesize = <64>;
 			protect-gpios = <&gpioa 14 GPIO_ACTIVE_HIGH>;
                         reg = <0x50>;
         };
