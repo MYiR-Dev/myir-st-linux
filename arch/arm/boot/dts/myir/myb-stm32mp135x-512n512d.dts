@@ -1,0 +1,125 @@
+// SPDX-License-Identifier: (GPL-2.0+ OR BSD-3-Clause)
+/*
+ * Copyright (C) MYiR 2022 - All Rights Reserved
+ * Author: Alexhu <fan.hu@myirtech.com> for MYiR.
+ */
+
+/dts-v1/;
+
+
+#include "myb-stm32mp135x-base.dtsi"
+
+/ {
+        model = "STMicroelectronics MYD-YF13X-NAND Discovery Board";
+        compatible = "st,stm32mp135f-dk", "st,stm32mp135";
+
+	aliases {
+		ethernet0 = &ethernet1;
+		ethernet1 = &ethernet2;
+		serial0 = &uart4;
+		serial1 = &uart7;
+		serial2 = &uart5;
+	};
+
+	chosen {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+		stdout-path = "serial0:115200n8";
+
+		// framebuffer {
+		// 	compatible = "simple-framebuffer";
+		// 	clocks = <&rcc LTDC_PX>;
+		// 	status = "disabled";
+		// };
+	};
+
+	memory@c0000000 {
+		device_type = "memory";
+		reg = <0xc0000000 0x20000000>;
+	};
+
+	reserved-memory {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+
+		optee_framebuffer@dd000000 {
+			reg = <0xdd000000 0x1000000>;
+			no-map;
+		};
+
+		optee@de000000 {
+			reg = <0xde000000 0x2000000>;
+			no-map;
+		};
+	};
+
+};
+
+&qspi {
+        pinctrl-names = "default", "sleep";
+        pinctrl-0 = <&quadspi_pins_mx>;
+        pinctrl-1 = <&quadspi_sleep_pins_mx>;
+        reg = <0x58003000 0x1000>,
+              <0x70000000 0x4000000>;
+        #address-cells = <1>;
+        #size-cells = <0>;
+        status = "okay";
+
+        flash0: F35SQB004G@0 {
+                compatible = "spi-nand";
+                reg = <0>;
+                spi-rx-bus-width = <4>;
+                spi-tx-bus-width = <4>;
+                spi-max-frequency = <64000000>;
+                #address-cells = <1>;
+                #size-cells = <1>;
+		label = "spi-nand0";
+
+	         partition@0 {
+         		label = "fsbl1";
+         		reg = <0x000000 0x80000>;  // 512k
+ 		};
+
+ 		partition@1 {
+         		label = "fsbl2";
+         		reg = <0x80000 0x80000>;  // 512k
+ 		};
+
+ 		partition@2 {
+         		label = "metadata1";
+         		reg = <0x100000 0x80000>;  // 512k
+	        };
+
+ 		partition@3 {
+         		label = "metadata2";
+         		reg = <0x180000 0x80000>;  // 512k
+ 		};
+
+ 		partition@4 {
+         		label = "fip-a1";
+         		reg = <0x200000 0x400000>;  // 4MB
+ 		};
+
+ 		partition@5 {
+         		label = "fip-a2";
+         		reg = <0x600000 0x400000>;  // 4MB
+ 		};
+
+ 		partition@6 {
+         		label = "fip-b1";
+         		reg = <0xa00000 0x400000>;  // 4MB
+ 		};
+
+ 		partition@7 {
+         		label = "fip-b2";
+         		reg = <0xe00000 0x400000>;  // 4MB
+ 		};
+
+ 		partition@8 {
+         		label = "UBI";
+         		reg = <0x1200000 0xEE00000>;  // 剩余空间
+ 		};	
+        };
+};
