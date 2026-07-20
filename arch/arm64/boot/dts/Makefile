@@ -18,6 +18,7 @@ subdir-y += intel
 subdir-y += lg
 subdir-y += marvell
 subdir-y += mediatek
+subdir-y += myir
 subdir-y += microchip
 subdir-y += nuvoton
 subdir-y += nvidia

@@ -1,0 +1,110 @@
+// SPDX-License-Identifier: (GPL-2.0-only OR BSD-3-Clause)
+/*
+ * Copyright (C) MYiR 2024 - All Rights Reserved
+ */
+
+
+&switch0 {
+
+#if (ETH_SWITCH_ENABLE)	
+	status = "okay";
+#else	
+	status = "disabled";
+#endif
+
+	pinctrl-0 = <&eth1_rgmii_pins_a>, <&eth3_rgmii_pins_a>;
+	pinctrl-names = "default";
+	phy-mode = "rgmii";
+	st,ethsw-internal-125;
+};
+
+&eth1 {
+	status = "okay";
+
+	phy-mode = "rgmii";
+	max-speed = <1000>;
+	st,eth-clk-sel;
+	st,ext-phyclk = <&clk_ext_phy1>;
+	snps,ext-systime;
+
+	st,num_reset_gpios = <2>;
+	st,phy-reset-gpios =  <&gpioi 4 GPIO_ACTIVE_HIGH>,
+			     <&gpiod 10 GPIO_ACTIVE_HIGH>;
+	st,reset-assert-us = <15000>;
+	st,reset-deassert-us = <15000>;
+
+#if (ETH_SWITCH_ENABLE)	
+	pinctrl-0 = <&eth1_mdio_pins_a>;
+	pinctrl-names = "default";
+	fixed_link: fixed-link {
+		speed = <1000>;
+		full-duplex;
+	};
+#else
+	pinctrl-0 = <&eth1_rgmii_pins_a &eth1_mdio_pins_a>;
+	pinctrl-1 = <&eth1_rgmii_sleep_pins_a &eth1_mdio_sleep_pins_a>;
+	pinctrl-names = "default", "sleep";
+	phy-handle = <&phy1_eth1>;
+#endif
+
+	mdio1 {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		compatible = "snps,dwmac-mdio";
+
+		phy1_eth1: ethernet-phy@4 {
+                        reset-gpios =  <&gpioi 4 GPIO_ACTIVE_LOW>;
+                        reset-assert-us = <10000>;
+                        reset-deassert-us = <80000>;
+                        realtek,eee-disable;
+			motorcomm,auto-sleep-disabled;
+                        motorcomm,keep-pll-enabled;
+			reg = <4>;
+			ytphy_delay_cfg = <0x4f5>;
+		};
+
+		phy2_eth1: ethernet-phy@6 {
+                        reset-gpios =  <&gpiod 10 GPIO_ACTIVE_LOW>;
+                        reset-assert-us = <10000>;
+                        reset-deassert-us = <80000>;
+                        realtek,eee-disable;
+			motorcomm,auto-sleep-disabled;
+			motorcomm,keep-pll-enabled;
+			reg = <6>;
+			ytphy_delay_cfg = <0x8f8>;
+		};
+	};
+};
+
+&eth2 {
+	status = "okay";
+	pinctrl-0 = <&eth2_rgmii_pins_a>;
+	pinctrl-1 = <&eth2_rgmii_sleep_pins_a>;
+	pinctrl-names = "default", "sleep";
+	phy-mode = "rgmii-id";
+	max-speed = <1000>;
+	phy-handle = <&phy1_eth2>;
+	st,eth-ptp-from-rcc;
+	st,ext-phyclk = <&clk_ext_phy2>;
+
+	//st,phy-reset-gpios =  <&gpiob 2 GPIO_ACTIVE_HIGH>;
+	//st,reset-assert-us = <15000>;
+	//st,reset-deassert-us = <15000>;
+
+	mdio1 {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		compatible = "snps,dwmac-mdio";
+		phy1_eth2: ethernet-phy@5 {
+                        reset-gpios =  <&gpiob 2 GPIO_ACTIVE_LOW>;
+                        reset-assert-us = <10000>;
+                        reset-deassert-us = <80000>;
+                        realtek,eee-disable;
+			motorcomm,auto-sleep-disabled;
+			motorcomm,keep-pll-enabled;
+			ytphy_delay_cfg = <0x8fa>;
+			reg = <5>;
+		};
+	};
+};
+
