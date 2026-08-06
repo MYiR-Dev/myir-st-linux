@@ -17,6 +17,7 @@
 #include <linux/regmap.h>
 #include <linux/reset.h>
 #include <linux/spinlock.h>
+#include <linux/mutex.h>
 
 #include <sound/dmaengine_pcm.h>
 #include <sound/pcm_params.h>
@@ -252,7 +253,7 @@ struct stm32_i2s_data {
 	dma_addr_t phys_addr;
 	spinlock_t lock_fd; /* Manage race conditions for full duplex */
 	spinlock_t irq_lock; /* used to prevent race condition with IRQ */
-	spinlock_t lock_mclk; /* Manage race conditions on mclk rate update */
+	struct mutex lock_mclk; /* Manage race conditions on mclk rate update */
 	unsigned int mclk_rate;
 	unsigned int fmt;
 	unsigned int divider;
@@ -752,7 +753,7 @@ static int stm32_i2s_set_sysclk(struct snd_soc_dai *cpu_dai,
 		freq, STM32_I2S_IS_MASTER(i2s) ? "master" : "slave",
 		dir ? "output" : "input");
 
-	spin_lock(&i2s->lock_mclk);
+	mutex_lock(&i2s->lock_mclk);
 
 	/* MCLK generation is available only in master mode */
 	if (dir == SND_SOC_CLOCK_OUT && STM32_I2S_IS_MASTER(i2s)) {
@@ -798,7 +799,7 @@ static int stm32_i2s_set_sysclk(struct snd_soc_dai *cpu_dai,
 	}
 
 out:
-	spin_unlock(&i2s->lock_mclk);
+	mutex_unlock(&i2s->lock_mclk);
 
 	return ret;
 }
@@ -1297,7 +1298,7 @@ static int stm32_i2s_probe(struct platform_device *pdev)
 	i2s->pdev = pdev;
 	i2s->ms_flg = I2S_MS_NOT_SET;
 	spin_lock_init(&i2s->lock_fd);
-	spin_lock_init(&i2s->lock_mclk);
+	mutex_init(&i2s->lock_mclk);
 	spin_lock_init(&i2s->irq_lock);
 	platform_set_drvdata(pdev, i2s);
 
