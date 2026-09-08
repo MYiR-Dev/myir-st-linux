@@ -761,7 +761,7 @@
 			reg = <0>;
 			csi_sink: endpoint {
 				remote-endpoint = <&ov5640_cam>;
-				data-lanes = <0 1>;
+				data-lanes = <1 2>;
 				bus-type = <4>;
 			};
 		};
@@ -996,7 +996,7 @@
 			ov5640_cam: endpoint {
 				remote-endpoint = <&csi_sink>;
 				clock-lanes = <0>;
-				data-lanes = <0 1>;
+				data-lanes = <1 2>;
 				link-frequencies = /bits/ 64 <456000000>;
 			};
 		};
