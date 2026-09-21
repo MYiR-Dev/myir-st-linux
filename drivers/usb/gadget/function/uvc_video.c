@@ -504,9 +504,15 @@ int uvcg_video_enable(struct uvc_video *video, int enable)
 		cancel_work_sync(&video->pump);
 		uvcg_queue_cancel(&video->queue, 0);
 
-		for (i = 0; i < video->uvc_num_requests; ++i)
-			if (video->ureq && video->ureq[i].req)
-				usb_ep_dequeue(video->ep, video->ureq[i].req);
+		/*
+		 * An alt-0 switch has already disabled the endpoint and completed
+		 * its outstanding requests; dequeuing them again is invalid.
+		 */
+		if (video->ep->enabled) {
+			for (i = 0; i < video->uvc_num_requests; ++i)
+				if (video->ureq && video->ureq[i].req)
+					usb_ep_dequeue(video->ep, video->ureq[i].req);
+		}
 
 		uvc_video_free_requests(video);
 		uvcg_queue_enable(&video->queue, 0);
