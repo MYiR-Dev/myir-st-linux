@@ -912,6 +912,8 @@
 		interrupt-parent = <&gpiob>;
 		interrupts = <3 IRQ_TYPE_EDGE_FALLING>;
 		reset-gpios = <&gpiob 0 GPIO_ACTIVE_LOW>;
+		touchscreen-size-x = <1024>;
+		touchscreen-size-y = <600>;
 	};
 #else
 	// 10.1-panel touch
@@ -922,6 +924,8 @@
 		interrupt-parent = <&gpiob>;
 		interrupts = <3 IRQ_TYPE_EDGE_FALLING>;
 		reset-gpios = <&gpiob 0 GPIO_ACTIVE_LOW>;
+		touchscreen-size-x = <1024>;
+                touchscreen-size-y = <600>;
 	};
 #endif
 
