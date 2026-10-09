@@ -1331,6 +1331,8 @@
         rs485-rx-during-tx;
         rs485-rts-delay = <1 1>;
         linux,rs485-enabled-at-boot-time;
+	/delete-property/dmas;
+        /delete-property/dma-names;
 	status = "okay";
 };
 
