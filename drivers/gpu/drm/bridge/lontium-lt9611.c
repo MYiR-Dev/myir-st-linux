@@ -13,6 +13,7 @@
 #include <linux/platform_device.h>
 #include <linux/regmap.h>
 #include <linux/regulator/consumer.h>
+#include <linux/workqueue.h>
 
 #include <sound/hdmi-codec.h>
 
@@ -42,6 +43,9 @@
 #define VID_INTERRUPT_ENABLE   0x02
 #define CEC_INTERRUPT_ENABLE   0x03
 
+#define LT9611_HPD_CONNECT_DEBOUNCE_MS    400
+#define LT9611_HPD_DISCONNECT_DEBOUNCE_MS 1000
+
 #define AR_ND                  0x00
 #define AR_4_3                 0x01
 #define AR_16_9                0x02
@@ -67,6 +71,8 @@ struct lt9611 {
 	struct regulator_bulk_data supplies[2];
 	struct i2c_client *client;
 	enum drm_connector_status status;
+	enum drm_connector_status hpd_status;
+	struct delayed_work hpd_work;
 	struct device_node *host_node;
 	u8 num_dsi_lanes;
 	struct mipi_dsi_device *dsi;
@@ -607,8 +613,15 @@ static enum drm_connector_status __lt9611_detect(struct lt9611 *lt9611)
 {
 	unsigned int reg_val = 0;
 	int connected = 0;
+	int ret;
 
-	regmap_read(lt9611->regmap, 0x825e, &reg_val);
+	ret = regmap_read(lt9611->regmap, 0x825e, &reg_val);
+	if (ret) {
+		dev_err_ratelimited(lt9611->dev,
+				    "failed to read HPD status: %d\n", ret);
+		return connector_status_unknown;
+	}
+
 	connected  = (reg_val & (BIT(2) | BIT(0)));
 
 	lt9611->status = connected ?  connector_status_connected :
@@ -1155,35 +1168,72 @@ static void lt9611_audio_exit(struct lt9611 *lt9611)
 	}
 }
 
+static void lt9611_hpd_work(struct work_struct *work)
+{
+	struct lt9611 *lt9611 = container_of(to_delayed_work(work),
+					     struct lt9611, hpd_work);
+	enum drm_connector_status status;
+	struct mipi_dsi_device *dsi;
+
+	status = __lt9611_detect(lt9611);
+	if (status == connector_status_unknown)
+		return;
+
+	if (status == lt9611->hpd_status) {
+		dev_dbg(lt9611->dev, "ignored unstable HPD interrupt, state is %s\n",
+			status == connector_status_connected ? "connected" :
+							       "disconnected");
+		return;
+	}
+
+	lt9611->hpd_status = status;
+	dev_info(lt9611->dev, "hdmi cable %s\n",
+		 status == connector_status_connected ? "connected" :
+							    "disconnected");
+
+	if (status == connector_status_connected && !lt9611->dsi) {
+		dsi = lt9611_attach_dsi(lt9611);
+		if (IS_ERR(dsi))
+			dev_err(lt9611->dev, "failed to attach DSI on HPD: %ld\n",
+				PTR_ERR(dsi));
+		else
+			lt9611->dsi = dsi;
+	}
+
+	if (lt9611->bridge.dev)
+		drm_kms_helper_hotplug_event(lt9611->bridge.dev);
+}
+
 static irqreturn_t lt9611_irq_thread_handler(int irq, void *dev_id)
 {
 	struct lt9611 *lt9611 = dev_id;
 	unsigned int irq_flag0 = 0;
 	unsigned int irq_flag3 = 0;
+	unsigned int hpd_debounce_ms;
 
 	regmap_read(lt9611->regmap, 0x820f, &irq_flag3);
 	regmap_read(lt9611->regmap, 0x820c, &irq_flag0);
 
 	/* hpd changed low */
 	if (irq_flag3 & 0x80) {
-		dev_info(lt9611->dev, "hdmi cable disconnected\n");
-
 		regmap_write(lt9611->regmap, 0x8207, 0xbf);
 		regmap_write(lt9611->regmap, 0x8207, 0x3f);
 	}
 
 	/* hpd changed high */
 	if (irq_flag3 & 0x40) {
-		dev_info(lt9611->dev, "hdmi cable connected\n");
-
 		regmap_write(lt9611->regmap, 0x8207, 0x7f);
 		regmap_write(lt9611->regmap, 0x8207, 0x3f);
-		if(!lt9611->dsi)
-			lt9611->dsi = lt9611_attach_dsi(lt9611);
 	}
 
-	if (irq_flag3 & 0xc0 && lt9611->bridge.dev)
-		drm_kms_helper_hotplug_event(lt9611->bridge.dev);
+	if (irq_flag3 & 0xc0) {
+		/* Treat simultaneous edge flags conservatively as a disconnect. */
+		hpd_debounce_ms = irq_flag3 & 0x80 ?
+			LT9611_HPD_DISCONNECT_DEBOUNCE_MS :
+			LT9611_HPD_CONNECT_DEBOUNCE_MS;
+		mod_delayed_work(system_wq, &lt9611->hpd_work,
+				 msecs_to_jiffies(hpd_debounce_ms));
+	}
 
 	/* video input changed */
 	if (irq_flag0 & 0x01) {
@@ -1215,6 +1265,8 @@ static int lt9611_probe(struct i2c_client *client)
 	lt9611->dev = dev;
 	lt9611->client = client;
 	lt9611->sleep = false;
+	lt9611->hpd_status = connector_status_unknown;
+	INIT_DELAYED_WORK(&lt9611->hpd_work, lt9611_hpd_work);
 
 	lt9611->regmap = devm_regmap_init_i2c(client, &lt9611_regmap_config);
 	if (IS_ERR(lt9611->regmap)) {
@@ -1272,6 +1324,7 @@ static int lt9611_probe(struct i2c_client *client)
 		goto err_remove_bridge;
 	}
 
+	lt9611->hpd_status = __lt9611_detect(lt9611);
 	lt9611_enable_hpd_interrupts(lt9611);
 
 	ret = lt9611_audio_init(dev, lt9611);
@@ -1281,6 +1334,8 @@ static int lt9611_probe(struct i2c_client *client)
 	return 0;
 
 err_remove_bridge:
+	disable_irq(client->irq);
+	cancel_delayed_work_sync(&lt9611->hpd_work);
 	drm_bridge_remove(&lt9611->bridge);
 
 err_disable_regulators:
@@ -1294,6 +1349,7 @@ static void lt9611_remove(struct i2c_client *client)
 	struct lt9611 *lt9611 = i2c_get_clientdata(client);
 
 	disable_irq(client->irq);
+	cancel_delayed_work_sync(&lt9611->hpd_work);
 	lt9611_audio_exit(lt9611);
 	drm_bridge_remove(&lt9611->bridge);
 
