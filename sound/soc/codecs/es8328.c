@@ -266,7 +266,7 @@ static const struct snd_kcontrol_new es8328_right_pga_controls =
 	SOC_DAPM_ENUM("Route", es8328_rpga_enum);
 
 /* Differential Mux */
-static const char * const es8328_diff_sel[] = {"Line 1", "Line 2"};
+static const char * const es8328_diff_sel[] = {"Line 2", "Line 1"};
 static SOC_ENUM_SINGLE_DECL(diffmux,
 			    ES8328_ADCCONTROL3, 7, es8328_diff_sel);
 static const struct snd_kcontrol_new es8328_diffmux_controls =
@@ -447,6 +447,14 @@ static const struct snd_soc_dapm_route es8328_dapm_routes[] = {
 
 static int es8328_mute(struct snd_soc_dai *dai, int mute, int direction)
 {
+	/*
+	 * DAPM powers the DAC and output PGAs before unmuting the stream.
+	 * Give the analog path time to settle so its power-up transient is not
+	 * passed to the headphones.
+	 */
+	if (!mute)
+		msleep(100);
+
 	return snd_soc_component_update_bits(dai->component, ES8328_DACCONTROL3,
 			ES8328_DACCONTROL3_DACMUTE,
 			mute ? ES8328_DACCONTROL3_DACMUTE : 0);
@@ -549,9 +557,12 @@ static int es8328_hw_params(struct snd_pcm_substream *substream,
         snd_soc_component_write(component, 0x08,  0x04);
         snd_soc_component_write(component, 0x04,  0x00);
         snd_soc_component_write(component, 0x06,  0xc3);
-        snd_soc_component_write(component, 0x19,  0x02);
-        snd_soc_component_write(component, 0x09,  0x88);
+	/* Keep the DAC muted while the analog playback path is powered up. */
+	snd_soc_component_write(component, ES8328_DACCONTROL3,
+			0x02 | ES8328_DACCONTROL3_DACMUTE);
+        /* Keep the microphone PGA value selected through the ALSA control. */
         snd_soc_component_write(component, 0x0a,  0xf8);
+        /* The board microphone is wired to differential Line 1 (bit 7 set). */
         snd_soc_component_write(component, 0x0b,  0x9a);
         snd_soc_component_write(component, 0x0c,  0x50);
         snd_soc_component_write(component, 0x0d,  0x02);
