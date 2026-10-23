@@ -873,6 +873,7 @@
             interrupts = <1 IRQ_TYPE_EDGE_FALLING>;
             pinctrl-names = "default";
             reset-gpios = <&gpioz 2 GPIO_ACTIVE_HIGH>;
+            ccget-gpios = <&gpioz 3 GPIO_ACTIVE_HIGH>;
             status = "okay";
 
 

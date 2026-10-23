@@ -7,6 +7,7 @@
  */
 
 #include <linux/bitfield.h>
+#include <linux/gpio/consumer.h>
 #include <linux/i2c.h>
 #include <linux/interrupt.h>
 #include <linux/kernel.h>
@@ -161,6 +162,7 @@ struct stusb160x {
 	bool			vbus_on;
 
 	struct usb_role_switch	*role_sw;
+	struct gpio_desc	*cc_gpio;
 };
 
 static bool stusb160x_reg_writeable(struct device *dev, unsigned int reg)
@@ -341,6 +343,26 @@ static void stusb160x_set_data_role(struct stusb160x *chip,
 	typec_set_data_role(chip->port, data_role);
 }
 
+static void stusb160x_set_cc_gpio(struct stusb160x *chip, bool cc2_attached)
+{
+	if (chip->cc_gpio)
+		gpiod_set_value_cansleep(chip->cc_gpio, cc2_attached);
+}
+
+static void stusb160x_update_orientation(struct stusb160x *chip)
+{
+	u32 val;
+	int ret;
+
+	ret = regmap_read(chip->regmap, STUSB160X_CC_OPERATION_STATUS, &val);
+	if (ret) {
+		dev_err(chip->dev, "Failed to read CC operation status: %d\n", ret);
+		return;
+	}
+
+	stusb160x_set_cc_gpio(chip, val & STUSB160X_CC_ATTACHED);
+}
+
 static int stusb160x_attach(struct stusb160x *chip, u32 status)
 {
 	struct typec_partner_desc desc;
@@ -371,6 +393,7 @@ static int stusb160x_attach(struct stusb160x *chip, u32 status)
 	typec_set_pwr_opmode(chip->port, stusb160x_get_pwr_opmode(chip));
 	typec_set_vconn_role(chip->port, stusb160x_get_vconn_role(status));
 	stusb160x_set_data_role(chip, STUSB160X_CC_DATA_ROLE(status), true);
+	stusb160x_update_orientation(chip);
 
 	return 0;
 
@@ -388,6 +411,7 @@ static void stusb160x_detach(struct stusb160x *chip, u32 status)
 	typec_unregister_partner(chip->partner);
 	chip->partner = NULL;
 
+	stusb160x_set_cc_gpio(chip, false);
 	typec_set_pwr_role(chip->port, STUSB160X_CC_POWER_ROLE(status));
 	typec_set_pwr_opmode(chip->port, TYPEC_PWR_MODE_USB);
 	typec_set_vconn_role(chip->port, stusb160x_get_vconn_role(status));
@@ -735,6 +759,14 @@ static int stusb160x_probe(struct i2c_client *client)
 		goto main_reg_disable;
 	}
 
+	chip->cc_gpio = devm_gpiod_get_optional(chip->dev, "ccget",
+						GPIOD_OUT_LOW);
+	if (IS_ERR(chip->cc_gpio)) {
+		ret = dev_err_probe(chip->dev, PTR_ERR(chip->cc_gpio),
+				    "Failed to get ccget GPIO\n");
+		goto all_reg_disable;
+	}
+
 	chip->port = typec_register_port(chip->dev, &chip->capability);
 	if (IS_ERR(chip->port)) {
 		ret = PTR_ERR(chip->port);
@@ -801,6 +833,8 @@ fwnode_put:
 static void stusb160x_remove(struct i2c_client *client)
 {
 	struct stusb160x *chip = i2c_get_clientdata(client);
+
+	stusb160x_set_cc_gpio(chip, false);
 
 	if (chip->partner) {
 		typec_unregister_partner(chip->partner);
