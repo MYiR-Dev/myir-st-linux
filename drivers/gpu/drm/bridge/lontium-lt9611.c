@@ -45,6 +45,8 @@
 
 #define LT9611_HPD_CONNECT_DEBOUNCE_MS    400
 #define LT9611_HPD_DISCONNECT_DEBOUNCE_MS 1000
+#define LT9611_HPD_RECHECK_MS              500
+#define LT9611_HPD_RECHECK_COUNT           2
 
 #define AR_ND                  0x00
 #define AR_4_3                 0x01
@@ -73,6 +75,8 @@ struct lt9611 {
 	enum drm_connector_status status;
 	enum drm_connector_status hpd_status;
 	struct delayed_work hpd_work;
+	unsigned int hpd_rechecks_left;
+	bool hpd_recheck_active;
 	struct device_node *host_node;
 	u8 num_dsi_lanes;
 	struct mipi_dsi_device *dsi;
@@ -1174,34 +1178,57 @@ static void lt9611_hpd_work(struct work_struct *work)
 					     struct lt9611, hpd_work);
 	enum drm_connector_status status;
 	struct mipi_dsi_device *dsi;
+	unsigned int rechecks_left;
+	bool notify = false;
 
 	status = __lt9611_detect(lt9611);
 	if (status == connector_status_unknown)
-		return;
+		goto recheck;
 
-	if (status == lt9611->hpd_status) {
-		dev_dbg(lt9611->dev, "ignored unstable HPD interrupt, state is %s\n",
-			status == connector_status_connected ? "connected" :
-							       "disconnected");
-		return;
-	}
-
-	lt9611->hpd_status = status;
-	dev_info(lt9611->dev, "hdmi cable %s\n",
-		 status == connector_status_connected ? "connected" :
+	if (status != lt9611->hpd_status) {
+		lt9611->hpd_status = status;
+		notify = true;
+		dev_info(lt9611->dev, "hdmi cable %s\n",
+			 status == connector_status_connected ? "connected" :
 							    "disconnected");
 
-	if (status == connector_status_connected && !lt9611->dsi) {
-		dsi = lt9611_attach_dsi(lt9611);
-		if (IS_ERR(dsi))
-			dev_err(lt9611->dev, "failed to attach DSI on HPD: %ld\n",
-				PTR_ERR(dsi));
-		else
-			lt9611->dsi = dsi;
+		if (status == connector_status_connected && !lt9611->dsi) {
+			dsi = lt9611_attach_dsi(lt9611);
+			if (IS_ERR(dsi))
+				dev_err(lt9611->dev,
+					"failed to attach DSI on HPD: %ld\n",
+					PTR_ERR(dsi));
+			else
+				lt9611->dsi = dsi;
+		}
+	} else if (READ_ONCE(lt9611->hpd_recheck_active) &&
+		   !READ_ONCE(lt9611->hpd_rechecks_left)) {
+		/*
+		 * Re-emit the final stable state.  This recovers when userspace
+		 * probed during a short HPD pulse or the first uevent was lost.
+		 */
+		notify = true;
+		dev_info(lt9611->dev, "reconfirmed hdmi cable %s\n",
+			 status == connector_status_connected ? "connected" :
+							    "disconnected");
+	} else {
+		dev_dbg(lt9611->dev, "HPD state remains %s\n",
+			status == connector_status_connected ? "connected" :
+							       "disconnected");
 	}
 
-	if (lt9611->bridge.dev)
+	if (notify && lt9611->bridge.dev)
 		drm_kms_helper_hotplug_event(lt9611->bridge.dev);
+
+recheck:
+	rechecks_left = READ_ONCE(lt9611->hpd_rechecks_left);
+	if (rechecks_left) {
+		WRITE_ONCE(lt9611->hpd_rechecks_left, rechecks_left - 1);
+		mod_delayed_work(system_wq, &lt9611->hpd_work,
+				 msecs_to_jiffies(LT9611_HPD_RECHECK_MS));
+	} else {
+		WRITE_ONCE(lt9611->hpd_recheck_active, false);
+	}
 }
 
 static irqreturn_t lt9611_irq_thread_handler(int irq, void *dev_id)
@@ -1231,6 +1258,9 @@ static irqreturn_t lt9611_irq_thread_handler(int irq, void *dev_id)
 		hpd_debounce_ms = irq_flag3 & 0x80 ?
 			LT9611_HPD_DISCONNECT_DEBOUNCE_MS :
 			LT9611_HPD_CONNECT_DEBOUNCE_MS;
+		WRITE_ONCE(lt9611->hpd_rechecks_left,
+			   LT9611_HPD_RECHECK_COUNT);
+		WRITE_ONCE(lt9611->hpd_recheck_active, true);
 		mod_delayed_work(system_wq, &lt9611->hpd_work,
 				 msecs_to_jiffies(hpd_debounce_ms));
 	}
